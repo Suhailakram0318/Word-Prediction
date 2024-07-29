@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FF69B4; /* Pink color */
+        }
+        .input-container {
+            margin-top: 20px;
+        }
+        .input-container label {
+            display: block;
+            margin-top: 10px;
+        }
+        .input-container input {
+            width: 60%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: block;
+            width: 200px;
+            margin: 10px auto;
+        }
+        .button.voice {
+            background-color: #FBBC05; /* Yellow */
+        }
+        .button.predict {
+            background-color: #4285F4; /* Blue */
+        }
+        .button.translate {
+            background-color: #34A853; /* Green */
+        }
+        .button.read {
+            background-color: #EA4335; /* Red */
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Word Predictor with Web Scrapping & Sentiment Analysis</div>
+    <div class="input-container">
+        <label for="text-input">Enter your text or use voice input:</label>
+        <input type="text" id="text-input" placeholder="Enter text here...">
+    </div>
+    <button class="button voice" onclick="voiceInput()">Voice Input</button>
+    <button class="button predict" onclick="predictNextWord()">Predict Next Word</button>
+    <button class="button translate" onclick="translateWord()" disabled>Translate to Telugu</button>
+    <button class="button read" onclick="readOutput()" disabled>Read Output</button>
+
+    <div class="result" id="result"></div>
+    <div class="result" id="related-words"></div>
+
+    <script>
+        async function predictNextWord() {
+            const text = document.getElementById('text-input').value;
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            });
+            const result = await response.json();
+            document.getElementById('result').innerText = `Predicted next word: ${result.predicted_word}\n${result.sentiment_label}`;
+            document.querySelector('.button.translate').disabled = false;
+            document.querySelector('.button.read').disabled = false;
+            document.querySelector('.button.translate').setAttribute('data-word', result.predicted_word);
+
+            let relatedWordsText = 'Related words and their sentiments:\n';
+            result.related_words.forEach(word => {
+                relatedWordsText += `${word[0]} - Polarity: ${word[1].toFixed(2)}, Subjectivity: ${word[2].toFixed(2)}\n`;
+            });
+            document.getElementById('related-words').innerText = relatedWordsText;
+        }
+
+        async function translateWord() {
+            const predictedWord = document.querySelector('.button.translate').getAttribute('data-word');
+            const response = await fetch('/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ predicted_word: predictedWord })
+            });
+            const result = await response.json();
+            document.getElementById('result').innerText += `\nTranslation in Telugu: ${result.translated_word}`;
+        }
+
+        async function readOutput() {
+            const outputText = document.getElementById('result').innerText + '\n' + document.getElementById('related-words').innerText;
+            await fetch('/read_output', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ output_text: outputText })
+            });
+        }
+
+        function voiceInput() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                document.getElementById('text-input').value = speechResult;
+                document.getElementById('result').innerText = 'Voice input received. You can now predict the next word.';
+            };
+
+            recognition.onspeechend = function() {
+                recognition.stop();
+            };
+
+            recognition.onerror = function(event) {
+                document.getElementById('result').innerText = 'Error occurred in recognition: ' + event.error;
+            };
+        }
+    </script>
+</body>
+</html>

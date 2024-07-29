@@ -1,0 +1,63 @@
+                                                                                      Word Prediction
+
+Importing Libraries
+tkinter: A standard Python interface to the Tk GUI toolkit.
+filedialog: A module within tkinter for opening and saving files.
+Text: Another module within tkinter for handling text widgets.
+numpy: A library for numerical operations on arrays.
+pickle: A module for serializing and deserializing Python object structures.
+tensorflow.keras: Modules from Keras, a high-level neural networks API, integrated with TensorFlow.
+
+Class Definition
+TextPredictorApp: The main class that handles the GUI and text prediction functionality.
+__init__: The constructor method that initializes the instance of the class.
+self.root: The root window of the Tkinter GUI.
+self.root.title("Text Predictor"): Sets the title of the Tkinter window.
+self.file_path: A variable to store the file path of the uploaded dataset, initialized as None.
+
+Adding GUI Components
+Upload Button: Creates a button for uploading the dataset. The command parameter specifies the function to be called when the button is clicked.
+Train Button: Creates a button for training the model, initially disabled (state=tk.DISABLED). It becomes enabled after a dataset is uploaded.
+Entry Label: Creates a label for the text entry field.
+Text Entry: Creates a text entry field where users can input their text.
+Predict Button: Creates a button for predicting the next word, initially disabled. It becomes enabled after the model is trained.
+Result Label: Creates a label to display the predicted next word.
+
+File Upload Function
+upload_file: This method handles the file upload process.
+filedialog.askopenfilename: Opens a dialog box for selecting a file. It only allows text files (*.txt).
+self.file_path: Stores the path of the selected file.
+self.train_btn.config(state=tk.NORMAL): Enables the "Train Model" button once a file is selected.
+
+Model Training Function
+train_model: This method handles the training of the model.
+open(self.file_path, "r", encoding="utf8"): Opens the selected file in read mode with UTF-8 encoding.
+file.readlines(): Reads all the lines of the file into a list.
+
+Data Preprocessing
+data = ' '.join(lines): Joins all the lines into a single string.
+data.replace(): Replaces newline characters, carriage returns, and some unicode characters with spaces.
+data.split(): Splits the string into words, removes extra spaces, and then joins them back into a single string.
+
+Tokenization and Sequence Preparation
+Tokenizer(): Initializes a new Keras Tokenizer instance.
+tokenizer.fit_on_texts([data]): Fits the tokenizer on the text data.
+self.tokenizer = tokenizer: Saves the tokenizer instance for later use.
+pickle.dump(tokenizer, token_file): Saves the tokenizer to a file for later use.
+tokenizer.texts_to_sequences([data]): Converts the text data into sequences of integers.
+vocab_size: The size of the vocabulary, which is the number of unique words plus one (for padding).
+
+Sequence Creation
+sequences: Creates sequences of 4 words, where the first 3 words are input and the last word is the output.
+np.array(sequences): Converts the list of sequences into a numpy array.
+X: The input data, which is all but the last word of each sequence.
+y: The output data, which is the last word of each sequence, converted to categorical format.
+
+Model Creation and Training
+Sequential(): Initializes a new Sequential model.
+Embedding: Embedding layer to learn word representations.
+LSTM: Long Short-Term Memory layers for sequence processing.
+Dense: Fully connected layers.
+self.model.compile: Compiles the model with categorical cross-entropy loss and the Adam optimizer.
+self.model.fit: Trains the model on the input data (X) and the output data (y) for 70 epochs with a batch size of 64.
+self.model.save: Saves the trained model to a file.
